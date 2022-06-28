@@ -1,68 +1,117 @@
 const axios = require('axios').default;
-const { host } = require('../config');
+const { host, email } = require('../config');
+const colors = require('colors');
 
-const getAuthtoken = async (email) => {
-    const result = await axios.get(`${host.rooftop}/token?email=${email}`);
-    return result.data.token;
-}
-
-class BlocksService{
-    constructor(token){
-        this.token = token;
-        this.data = {};
+class BlocksService {
+    constructor() {
+        this.token = '';
+        this.data = [];
         this.chunkSize = 0;
-        this.length= 0;
-        this.blocks=[];
-        this.encoded='';
-        console.log('instance of block service');
+        this.length = 0;
+        this.blocks = [];
+        this.auxBlocks = [];
+        this.complete = false;
     }
 
-    async saveBlocksData(){
-        console.log('get blocks data init...');
-        const result = await axios.get(`${host.rooftop}/blocks?token=${this.token}`);
-        console.log('get blocks data finished');
-        console.log(result.data);
+    async auth() {
+        console.log(colors.yellow('getting token...'));
 
-        this.data = result.data.data;
-        this.chunkSize = result.data.chunkSize;
-        this.length = result.data.length;
+        const response = await axios(`${host.rooftop}/token`, {
+            params: {
+                email
+            }
+        });
+        this.token = response.data.token;
 
-        this.blocks[0] = this.data[0];
+        console.log(colors.green('get token success with email: ' + email + ' token: ' + this.token));
+    }
+
+    async saveData() {
+        console.log(colors.yellow('saving data blocks...'));
+
+        const response = await axios.get(`${host.rooftop}/blocks`, {
+            params: {
+                token: this.token
+            }
+        });
+        this.data = response.data.data;
+        this.chunkSize = response.data.chunkSize;
+        this.length = response.data.length;
+        this.blocks.push(this.data[0]);
         this.auxBlocks = this.data;
         this.auxBlocks.shift();
 
-        console.log(this.auxBlocks);
+        console.log(colors.green('get data success'));
+        console.table(this.data);
     }
 
-    async generateEncode(){
-        this.auxBlocks.forEach(async (element) => {
-            const blockSave = this.blocks.concat(element);
-            const result = await this.#verifyAdjacent(blockSave);
-            result ? this.auxBlocks = this.auxBlocks.filter((item) => item !== element)  : null;
-        });
-    }
+    async decodeData() {
+        console.log('Reporded: ');
+        console.log('mining blocks: ');
+        console.table(this.blocks);
 
-    async #verifyAdjacent(blocks){
-        const result = await axios.post(`${host.rooftop}/check?token=${this.token}`, {
-            blocks
+        const promises = []
+
+        this.auxBlocks.forEach(block => {
+            const testBlock = this.blocks.concat(block);
+            promises.push(this.#verifyAdjacent(testBlock));
         });
-        console.log('test blocks: ');
-        if(result.data.message){
-            console.log(`Verified success, save blocks: `);
-            this.blocks = blocks;
+
+        console.log(`posibiliets: ${promises.length}`);
+        console.log(`testing...`);
+
+        const result = await Promise.all(promises);
+
+        result.forEach((test, idx) => {
+            if(!this.complete && test.data.message ){
+                this.auxBlocks.splice(idx, 1);
+                this.blocks.push(JSON.parse(test.config.data).blocks.pop());
+                this.complete = this.data.length == this.blocks.length;
+
+                console.log(`blocks mining: ${this.blocks.length} of ${this.data.length}`);
+                console.log('test success block: ');
+                console.table(this.blocks);
+            }
+        });
+
+        console.log(`blocks encoded: ${this.blocks.length}`);
+
+
+        if(this.complete || promises.length <= 0){
+            const result = await this.#verifyEncode();
+
+            if(result){
+                console.log(colors.green('************************* Decode Success *************************'));
+            } else {
+                console.log(colors.red('************************* Decode Error *************************'));
+            }
+
+            console.table(this.blocks);
         } else {
-            console.log(`Verified failed: `);
+            await this.decodeData();
         }
-        console.log(blocks);
+     }
+
+    async #verifyAdjacent(blocks) {
+        console.log('test block...');
+
+        const result = await axios.post(`${host.rooftop}/check?token=${this.token}`, {
+            blocks: [
+                blocks[blocks.length - 2],
+                blocks[blocks.length - 1]
+            ]
+        });
+        return result;
+    }
+
+    async #verifyEncode(){
+        console.log('test encode...');
+
+        const result = await axios.post(`${host.rooftop}/check?token=${this.token}`, {
+            encoded: this.blocks.join("")
+        });
         return result.data.message;
     }
-
-    async encodeFinished(){
-        console.log('encoded finished');
-    }
 }
 
-module.exports = {
-    getAuthtoken,
-    BlocksService
-}
+module.exports = BlocksService;

@@ -1,23 +1,18 @@
-// emial
-const { email } = require('../src/config');
+const colors = require('colors');
 
 // service
-const { getAuthtoken, BlocksService } = require('./services/blocks.service');
+const BlocksService = require('./services/blocks.service');
+
+const blocksService = new BlocksService();
 
 const check = async () => {
     try {
-        console.log(`email get token: ${email}`);
-        const token = await getAuthtoken(email);
-        const blocksService = new BlocksService(token);
-        await blocksService.saveBlocksData();
-        await blocksService.generateEncode();
+       await blocksService.auth();
+       await blocksService.saveData();
+       await blocksService.decodeData();
     } catch (error) {
-        console.log('error encoding blocks');
-        if(error && error.response && error.response.status == 429){
-            console.log('too many requests');
-        } else {
-            console.log(error);
-        }
+        console.error(colors.red('error check function'));
+        console.error(error);
     }
 }
 
