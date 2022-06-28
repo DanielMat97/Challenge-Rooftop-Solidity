@@ -70,7 +70,7 @@ class BlocksService {
 
                 console.log(`blocks mining: ${this.blocks.length} of ${this.data.length}`);
                 console.log('test success block: ');
-                console.table(this.blocks);
+                console.table(JSON.parse(test.config.data).blocks);
             }
         });
 
@@ -110,6 +110,8 @@ class BlocksService {
         const result = await axios.post(`${host.rooftop}/check?token=${this.token}`, {
             encoded: this.blocks.join("")
         });
+
+        console.log(colors.yellow(`result: ${result.data.message}`));
         return result.data.message;
     }
 }
