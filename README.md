@@ -1,6 +1,7 @@
 # Challenge Rooftop Academy Solidity
 
-Challenge rooftop academy solidity 2022
+Challenge rooftop academy solidity 2022 - entre mas bloques encontrados menor tiempo tardara con la ayuda del asincronismo de nodejs
+
 
  ## Paso a Paso
  
