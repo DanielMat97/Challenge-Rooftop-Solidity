@@ -1,0 +1,23 @@
+{
+  "name": "challenge-rooftop-solidity",
+  "version": "1.0.0",
+  "description": "Challenge solidity",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanielMat97/Challenge-Rooftop-Solidity.git"
+  },
+  "author": "Daniel Mateus Ovalle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DanielMat97/Challenge-Rooftop-Solidity/issues"
+  },
+  "homepage": "https://github.com/DanielMat97/Challenge-Rooftop-Solidity#readme",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "dotenv": "^16.0.1"
+  }
+}
